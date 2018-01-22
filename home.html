@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<title>demo 2</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	<style>
+		html,
+		body {
+			height: 100%;
+		}
+
+		body {
+			background-color: #000000;
+			margin: 0;
+			overflow: hidden;
+		}
+
+		#menu {
+			position: absolute;
+			bottom: 20px;
+			width: 100%;
+			text-align: center;
+		}
+
+		button {
+			color: rgba(127, 255, 255, 0.75);
+			background: transparent;
+			outline: 1px solid rgba(127, 255, 255, 0.75);
+			border: 0px;
+			padding: 30px 60px;
+			cursor: pointer;
+			font-size: 35px;
+		}
+
+		button:hover {
+			background-color: rgba(0, 255, 255, 0.5);
+		}
+
+		button:active {
+			color: #000000;
+			background-color: rgba(0, 255, 255, 0.75);
+		}
+	</style>
+</head>
+
+<body>
+	<script src="js/three.js"></script>
+	<script src="js/tween.min.js"></script>
+	<script src="js/CSS3DRenderer.js"></script>
+
+
+	<div id="container"></div>
+	<div id="menu">
+		<button id="helix">HELIX</button>
+		<button id="stop">SLOT</button>
+		<button id="sphere">SPHERE</button>
+		<button id="grid">GRID</button>
+	</div>
+
+	<script>
+		(function () {
+
+			var camera, scene, renderer;
+
+			var objects = [];
+			var points, stars = [], orbits = [];
+
+			function randomsort(a, b) {
+				return Math.random() > .5 ? -1 : 1;
+			}
+
+			const background = {
+
+				_init: function () {
+					let starsGeometry = new THREE.Geometry();
+
+					for (var i = 0; i < 12200; i++) {
+
+						var star = new THREE.Vector3();
+						star.x = THREE.Math.randFloatSpread(16000);
+						star.y = THREE.Math.randFloatSpread(16000);
+						star.z = THREE.Math.randFloatSpread(16000);
+
+						starsGeometry.vertices.push(star);
+
+						if (i < 11800) { stars.push(star.clone()); }
+
+					}
+
+					var starsMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: 40 });
+
+					var starField = new THREE.Points(starsGeometry, starsMaterial);
+
+					scene.add(starField);
+					points = starField.geometry.vertices.slice(0, 11800);
+
+					function _create(begin, length, radius, adjust = 0) {
+						for (var i = begin; i < (begin + length); i++) {
+							let vector_new = new THREE.Vector3(Math.cos(i) * radius, 0, Math.sin(i) * radius * 0.8 + adjust);
+							orbits.push(vector_new);
+						}
+					}
+					_create(0, 400, 3200);
+					_create(400, 500, 4800);
+					_create(900, 1000, 6400);
+					_create(1900, 1500, 7500, -300);
+					_create(3400, 2500, 10000, -1400);
+					_create(5900, 5900, 12000, -2500);
+
+				},
+
+				stars: function () {
+					transform(points, stars, 1000, 'orbit');
+				},
+
+				orbits: function () {
+					transform(points, orbits, 1000, 'orbit');
+				}
+			}
+
+			const scene_events = {
+
+				_init: function () {
+					var geometry = new THREE.PlaneGeometry(200, 200);
+
+					var loader = new THREE.TextureLoader();
+					for (let i = 0; i < 1000; i += 1) {
+
+						let texture = loader.load(`textures/images/${i}.jpg`);
+						texture.magFilter = THREE.LinearFilter;
+						var material = new THREE.MeshBasicMaterial({
+							map: texture,
+							side: THREE.DoubleSide
+						});
+						var plane = new THREE.Mesh(geometry, material);
+						plane.position.x = Math.random() * 4000 - 2000;
+						plane.position.y = Math.random() * 4000 - 2000;
+						plane.position.z = Math.random() * 4000 - 2000;
+
+						scene.add(plane);
+						objects.push(plane);
+
+					}
+				},
+
+				render: function () { },
+				reset: function () { },
+
+				sphere: function () {
+
+					scene_events.reset();
+
+					let sphere = [];
+
+					let radius = [1800, 400, 800, 450, 200, 350, 500];
+					let group_item = [550, 610, 750, 800, 840, 900, 1000];
+					let translate_arrX = [0, 3200, 4800, 6400, 7500, 10000, 12000];
+					let translate_arrZ = [0, 0, 0, 0, -300, -1400, -2500];
+					let group_arr = new THREE.Group();
+
+					function _create(radius, length) {
+
+						var vector = new THREE.Vector3();
+						var spherical = new THREE.Spherical();
+
+						for (var i = 0; i < length; i++) {
+
+							var phi = Math.acos(-1 + (2 * i) / length);
+							var theta = Math.sqrt(length * Math.PI) * phi;
+
+							var object = new THREE.Object3D();
+
+							spherical.set(radius, phi, theta);
+
+							object.position.setFromSpherical(spherical);
+
+							vector.copy(object.position).multiplyScalar(2);
+
+							object.lookAt(vector);
+
+							sphere.push(object);
+						}
+
+						return new THREE.Group();
+					}
+
+					for (let i = 0; i < group_item.length; i++) {
+
+						let item = i === 0 ? group_item[0] : group_item[i] - group_item[i - 1];
+						let begin = i === 0 ? 0 : group_item[i - 1];
+
+						let group = _create(radius[i], item);
+						group.add(...objects.slice(begin, group_item[i]));
+						group.position.x = translate_arrX[i] * -1;
+
+						group_arr.add(group);
+					}
+
+					scene.add(group_arr);
+					camera.position.x = -1000;
+					camera.position.y = 4500;
+					scene.rotateZ(-Math.PI / 9);
+					camera.lookAt(-1000, 0, 0);
+					// new TWEEN.Tween(camera.position)
+					// 	.to({
+					// 		x: -1000,
+					// 		y: 4500
+					// 	}, Math.random() * 1000 + 1000)
+					// 	.easing(TWEEN.Easing.Exponential.InOut)
+					// 	.onUpdate(function () {
+					// 		camera.lookAt(-1000, 0, 0);
+					// 	})
+					// 	.start();
+					// new TWEEN.Tween(camera.rotation)
+					// 	.to({
+					// 		z: Math.PI / 9
+					// 	}, Math.random() * 1000 + 1000)
+					// 	.easing(TWEEN.Easing.Exponential.InOut)
+					// 	.start();
+
+					scene_events.render = function () {
+						let time = Date.now() / 1000
+						group_arr.children.forEach(function (item, index) {
+							// 自转
+							item.rotateY(-2 * Math.PI * (index + 1 / 3) / 200);
+							// 公转
+							let x = translate_arrX[index] * (index % 2 ? Math.cos(time / (index + 1)) : Math.sin(time / (index + 1)));
+							let z = translate_arrX[index] * (index % 2 ? Math.sin(time / (index + 1)) : Math.cos(time / (index + 1))) * 0.8 + translate_arrZ[index];
+							item.position.set(x, 0, z);
+						})
+					};
+					scene_events.reset = function () {
+						scene.remove(group_arr);
+						objects.sort(randomsort);
+
+						scene.rotateZ(Math.PI / 9);
+						camera.position.y = 0;
+						camera.position.x = 0;
+						camera.lookAt(0, 0, 0);
+						// new TWEEN.Tween(camera.position)
+						// 	.to({
+						// 		x: 0,
+						// 		y: 0
+						// 	}, Math.random() * 1000 + 1000)
+						// 	.easing(TWEEN.Easing.Exponential.InOut)
+						// 	.onUpdate(function () {
+						// 		camera.lookAt(0, 0, 0);
+						// 	})
+						// 	.start();
+						// new TWEEN.Tween(camera.rotation)
+						// 	.to({
+						// 		z: 0
+						// 	}, Math.random() * 1000 + 1000)
+						// 	.easing(TWEEN.Easing.Exponential.InOut)
+						// 	.start();
+					}
+
+					background.orbits();
+					transform(objects, sphere, 1000, 'sphere');
+
+				},
+				helix: function () {
+
+					scene_events.reset();
+
+					let cylindrical = new THREE.Cylindrical();
+					let helix = [];
+					let group_arr = new THREE.Group();
+					let group_count = 4;
+					let group_item_count = objects.length / group_count;
+
+
+					for (var i = 0, l = objects.length; i < l; i++) {
+
+						var theta = i * 5.370 + Math.PI;
+						var y = -(i * 36) - 2000;
+
+						var object = new THREE.Object3D();
+
+						cylindrical.set(window.screen.availWidth - 1800, theta, y);
+
+						object.position.setFromCylindrical(cylindrical);
+
+						let _y = object.position.y;
+						let _z = object.position.z;
+						object.position.y = _z;
+						object.position.z = _y;
+
+						helix.push(object);
+
+					}
+
+					for (let i = 0; i < group_count; i++) {
+
+						let group = new THREE.Group();
+
+						group.add(...objects.slice(i * group_item_count, group_item_count * (i + 1)));
+
+						group_arr.add(group);
+					}
+
+					scene.add(group_arr);
+
+					scene_events.render = function () {
+
+						var time = Date.now() * 0.0005;
+
+						group_arr.rotation.z = time;
+						group_arr.position.z += 30;
+
+					};
+					scene_events.reset = function () {
+						scene.remove(group_arr);
+						objects.sort(randomsort);
+					}
+
+					background.stars();
+
+					transform(objects, helix, 1000, 'helix');
+
+				},
+				grid: function () {
+
+					scene_events.reset();
+
+					let grid = [];
+					let group_arr = new THREE.Group();
+					let group_count = 4;
+					let group_item_count = objects.length / group_count;
+
+					for (var i = 0; i < objects.length; i++) {
+
+						var object = new THREE.Object3D();
+
+						object.position.x = ((i % 5) * 800) - 1600;
+						object.position.y = (-(Math.floor(i / 5) % 5) * 800) + 1600;
+						object.position.z = (Math.floor(i / 25)) * 1000 - 28000;
+
+						grid.push(object);
+
+					}
+
+					for (let i = 0; i < group_count; i++) {
+
+						let group = new THREE.Group();
+
+						group.add(...objects.slice(i * group_item_count, group_item_count * (i + 1)));
+
+						group_arr.add(group);
+					}
+
+					scene.add(group_arr);
+
+					background.stars();
+
+					transform(objects, grid, 1000, 'grid');
+
+
+					scene_events.render = function () {
+						let time = Date.now() / 2000;
+						group_arr.children.forEach(function (item, index) {
+							item.rotation.z = time * (index % 2 ? 1 : -1);
+						})
+					};
+					scene_events.reset = function () {
+						scene.remove(group_arr);
+						objects.sort(randomsort);
+					}
+				},
+				slot: function () {
+					scene_events.reset();
+
+					let vector = new THREE.Vector3();
+					let cylindrical = new THREE.Cylindrical();
+					let slot = [];
+					let group_arr = new THREE.Group();
+					let group_count = 10;
+					let group_item_count = objects.length / group_count;
+
+
+					for (let i = 0, l = objects.length; i < l; i++) {
+
+						let theta = Math.PI/50 * i;
+
+						let object = new THREE.Object3D();
+
+						cylindrical.set(window.screen.availWidth - 200, theta, 0);
+
+						object.position.setFromCylindrical(cylindrical);
+
+						let _x = object.position.x;
+						let _y = object.position.y;
+						object.position.x = _y - 2700;
+						object.position.y = _x;
+
+						vector.x = object.position.x;
+						vector.y = object.position.y * 2;
+						vector.z = object.position.z * 2;
+
+						object.lookAt(vector);
+
+						slot.push(object);
+
+					}
+
+					for (let i = 0; i < group_count; i++) {
+
+						let group = new THREE.Group();
+
+						group.add(...objects.slice(i * group_item_count, group_item_count * (i + 1)));
+
+						group.position.x = 600 * i;
+
+						group_arr.add(group);
+					}
+
+					group_arr.position.z += 7500;
+					group_arr.position.y -= 2000;
+
+					scene.add(group_arr);
+
+					scene_events.render = function () {
+
+						var time = Date.now() * 0.0005;
+						group_arr.children.forEach(function (item, index) {
+							item.rotation.x = time/2 * (index % 2 ? 1 : -1);
+						})
+
+					};
+					scene_events.reset = function () {
+						scene.remove(group_arr);
+						objects.sort(randomsort);
+					}
+
+					background.stars();
+
+					transform(objects, slot, 1000, 'slot');
+				},
+				tunnel: function () {
+					
+				}
+			}
+
+			function init() {
+				// Camera
+				camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 1, 30000);
+				camera.position.z = 14000;
+				// Scene
+				scene = new THREE.Scene();
+				// Renderer
+				renderer = new THREE.WebGLRenderer({
+					antialias: false
+				});
+				renderer.setSize(window.innerWidth, window.innerHeight);
+				renderer.domElement.style.position = 'absolute';
+				document.getElementById('container').appendChild(renderer.domElement);
+
+				// Initial State - Objects & Background
+				scene_events._init();
+				background._init();
+
+				// Sphere
+				scene_events.sphere();
+
+				// Events
+				document.getElementById('sphere').addEventListener('click', scene_events.sphere, false);
+				document.getElementById('helix').addEventListener('click', scene_events.helix, false);
+				document.getElementById('grid').addEventListener('click', scene_events.grid, false);
+				document.getElementById('stop').addEventListener('click', function () {
+					scene_events.slot();
+				}, false);
+
+			}
+
+			function transform(origins, targets, duration, para) {
+
+				//TWEEN.removeAll();
+
+				for (var i = 0; i < origins.length; i++) {
+					let origin = origins[i];
+					let target = targets[i];
+
+					let position_x = target.position ? target.position.x : target.x;
+					let position_y = target.position ? target.position.y : target.y;
+					let position_z = target.position ? target.position.z : target.z;
+
+					new TWEEN.Tween(origin.position || origin)
+						.to({
+							x: position_x,
+							y: position_y,
+							z: position_z
+						}, Math.random() * duration + duration)
+						.easing(TWEEN.Easing.Exponential.InOut)
+						.onUpdate(function () {
+							if (para === 'orbit') {
+								scene.children[0].geometry.verticesNeedUpdate = true;
+							}
+						})
+						.start();
+
+					if (target.rotation) {
+
+						new TWEEN.Tween(origin.rotation)
+							.to({
+								x: target.rotation.x,
+								y: target.rotation.y,
+								z: target.rotation.z
+							}, Math.random() * duration + duration)
+							.easing(TWEEN.Easing.Exponential.InOut)
+							.start();
+					}
+				}
+
+				new TWEEN.Tween(this)
+					.to({}, duration * 2)
+					.onUpdate(render)
+					.start();
+
+			}
+
+			function onWindowResize() {
+
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+
+				renderer.setSize(window.innerWidth, window.innerHeight);
+
+				render();
+
+			}
+
+			function animate() {
+
+				requestAnimationFrame(animate);
+
+				render();
+
+				TWEEN.update();
+
+			}
+
+			function render() {
+
+				scene_events.render();
+
+				renderer.render(scene, camera);
+
+			}
+
+			init();
+
+			animate();
+
+			window.addEventListener('resize', onWindowResize, false);
+
+		})()
+	</script>
+</body>
+
+</html>
