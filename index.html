@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html>
-
 <head>
 	<title>demo 2</title>
 	<meta charset="utf-8">
@@ -48,24 +47,24 @@
 <body>
 	<script src="js/three.js"></script>
 	<script src="js/tween.min.js"></script>
-	<script src="js/CSS3DRenderer.js"></script>
-
+	<script src="js/util.js"></script>
 
 	<div id="container"></div>
 	<div id="menu">
 		<button id="helix">HELIX</button>
-		<button id="stop">SLOT</button>
+		<button id="slot">SLOT</button>
 		<button id="sphere">SPHERE</button>
 		<button id="grid">GRID</button>
+		<button id="tunnel">TUNNEL</button>
 	</div>
 
 	<script>
 		(function () {
 
-			var camera, scene, renderer;
+			let camera, scene, renderer;
 
-			var objects = [];
-			var points, stars = [], orbits = [];
+			let objects = [];
+			let points, stars = [], orbits = [];
 
 			function randomsort(a, b) {
 				return Math.random() > .5 ? -1 : 1;
@@ -76,9 +75,9 @@
 				_init: function () {
 					let starsGeometry = new THREE.Geometry();
 
-					for (var i = 0; i < 12200; i++) {
+					for (let i = 0; i < 12200; i++) {
 
-						var star = new THREE.Vector3();
+						let star = new THREE.Vector3();
 						star.x = THREE.Math.randFloatSpread(16000);
 						star.y = THREE.Math.randFloatSpread(16000);
 						star.z = THREE.Math.randFloatSpread(16000);
@@ -89,15 +88,15 @@
 
 					}
 
-					var starsMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: 40 });
+					let starsMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: 40 });
 
-					var starField = new THREE.Points(starsGeometry, starsMaterial);
+					let starField = new THREE.Points(starsGeometry, starsMaterial);
 
 					scene.add(starField);
 					points = starField.geometry.vertices.slice(0, 11800);
 
 					function _create(begin, length, radius, adjust = 0) {
-						for (var i = begin; i < (begin + length); i++) {
+						for (let i = begin; i < (begin + length); i++) {
 							let vector_new = new THREE.Vector3(Math.cos(i) * radius, 0, Math.sin(i) * radius * 0.8 + adjust);
 							orbits.push(vector_new);
 						}
@@ -123,18 +122,19 @@
 			const scene_events = {
 
 				_init: function () {
-					var geometry = new THREE.PlaneGeometry(200, 200);
+					let geometry = new THREE.PlaneGeometry(200, 200);
 
-					var loader = new THREE.TextureLoader();
+					let loader = new THREE.TextureLoader();
 					for (let i = 0; i < 1000; i += 1) {
 
 						let texture = loader.load(`textures/images/${i}.jpg`);
 						texture.magFilter = THREE.LinearFilter;
-						var material = new THREE.MeshBasicMaterial({
+						texture.minFilter = THREE.LinearFilter;
+						let material = new THREE.MeshBasicMaterial({
 							map: texture,
 							side: THREE.DoubleSide
 						});
-						var plane = new THREE.Mesh(geometry, material);
+						let plane = new THREE.Mesh(geometry, material);
 						plane.position.x = Math.random() * 4000 - 2000;
 						plane.position.y = Math.random() * 4000 - 2000;
 						plane.position.z = Math.random() * 4000 - 2000;
@@ -162,15 +162,15 @@
 
 					function _create(radius, length) {
 
-						var vector = new THREE.Vector3();
-						var spherical = new THREE.Spherical();
+						let vector = new THREE.Vector3();
+						let spherical = new THREE.Spherical();
 
-						for (var i = 0; i < length; i++) {
+						for (let i = 0; i < length; i++) {
 
-							var phi = Math.acos(-1 + (2 * i) / length);
-							var theta = Math.sqrt(length * Math.PI) * phi;
+							let phi = Math.acos(-1 + (2 * i) / length);
+							let theta = Math.sqrt(length * Math.PI) * phi;
 
-							var object = new THREE.Object3D();
+							let object = new THREE.Object3D();
 
 							spherical.set(radius, phi, theta);
 
@@ -203,22 +203,6 @@
 					camera.position.y = 4500;
 					scene.rotateZ(-Math.PI / 9);
 					camera.lookAt(-1000, 0, 0);
-					// new TWEEN.Tween(camera.position)
-					// 	.to({
-					// 		x: -1000,
-					// 		y: 4500
-					// 	}, Math.random() * 1000 + 1000)
-					// 	.easing(TWEEN.Easing.Exponential.InOut)
-					// 	.onUpdate(function () {
-					// 		camera.lookAt(-1000, 0, 0);
-					// 	})
-					// 	.start();
-					// new TWEEN.Tween(camera.rotation)
-					// 	.to({
-					// 		z: Math.PI / 9
-					// 	}, Math.random() * 1000 + 1000)
-					// 	.easing(TWEEN.Easing.Exponential.InOut)
-					// 	.start();
 
 					scene_events.render = function () {
 						let time = Date.now() / 1000
@@ -239,22 +223,6 @@
 						camera.position.y = 0;
 						camera.position.x = 0;
 						camera.lookAt(0, 0, 0);
-						// new TWEEN.Tween(camera.position)
-						// 	.to({
-						// 		x: 0,
-						// 		y: 0
-						// 	}, Math.random() * 1000 + 1000)
-						// 	.easing(TWEEN.Easing.Exponential.InOut)
-						// 	.onUpdate(function () {
-						// 		camera.lookAt(0, 0, 0);
-						// 	})
-						// 	.start();
-						// new TWEEN.Tween(camera.rotation)
-						// 	.to({
-						// 		z: 0
-						// 	}, Math.random() * 1000 + 1000)
-						// 	.easing(TWEEN.Easing.Exponential.InOut)
-						// 	.start();
 					}
 
 					background.orbits();
@@ -267,17 +235,15 @@
 
 					let cylindrical = new THREE.Cylindrical();
 					let helix = [];
+
 					let group_arr = new THREE.Group();
-					let group_count = 4;
-					let group_item_count = objects.length / group_count;
 
+					for (let i = 0, l = objects.length; i < l; i++) {
 
-					for (var i = 0, l = objects.length; i < l; i++) {
+						let theta = i * 5.370 + Math.PI;
+						let y = -(i * 36) - 2000;
 
-						var theta = i * 5.370 + Math.PI;
-						var y = -(i * 36) - 2000;
-
-						var object = new THREE.Object3D();
+						let object = new THREE.Object3D();
 
 						cylindrical.set(window.screen.availWidth - 1800, theta, y);
 
@@ -292,22 +258,19 @@
 
 					}
 
-					for (let i = 0; i < group_count; i++) {
+					group_arr.position.z += 6000;
 
-						let group = new THREE.Group();
-
-						group.add(...objects.slice(i * group_item_count, group_item_count * (i + 1)));
-
-						group_arr.add(group);
-					}
+					group_arr.add(...objects);
 
 					scene.add(group_arr);
 
+					time = Date.now()/1000;
+
 					scene_events.render = function () {
 
-						var time = Date.now() * 0.0005;
+						let _time = Date.now() * 0.0005;
 
-						group_arr.rotation.z = time;
+						group_arr.rotation.z = _time;
 						group_arr.position.z += 30;
 
 					};
@@ -330,9 +293,9 @@
 					let group_count = 4;
 					let group_item_count = objects.length / group_count;
 
-					for (var i = 0; i < objects.length; i++) {
+					for (let i = 0; i < objects.length; i++) {
 
-						var object = new THREE.Object3D();
+						let object = new THREE.Object3D();
 
 						object.position.x = ((i % 5) * 800) - 1600;
 						object.position.y = (-(Math.floor(i / 5) % 5) * 800) + 1600;
@@ -423,7 +386,7 @@
 
 					scene_events.render = function () {
 
-						var time = Date.now() * 0.0005;
+						let time = Date.now() * 0.0005;
 						group_arr.children.forEach(function (item, index) {
 							item.rotation.x = time/2 * (index % 2 ? 1 : -1);
 						})
@@ -439,7 +402,94 @@
 					transform(objects, slot, 1000, 'slot');
 				},
 				tunnel: function () {
-					
+					scene_events.reset();
+
+					let tunnel = [];
+					let vector = new THREE.Vector3();
+
+					let group_arr = new THREE.Group();
+
+					let path = new KnotCurve(80);
+
+					let circlesDetail = 10;
+					let segments = objects.length / circlesDetail;
+					let radius = 350;
+
+					let frames = path.computeFrenetFrames(segments, true);
+
+					for (let i = 0; i < segments; i++) {
+
+						let normal = frames.normals[i];
+						let binormal = frames.binormals[i];
+
+						let index = i / segments;
+
+						let p = path.getPoint(index);
+
+						for (let j = 0; j < circlesDetail; j++) {
+
+							let _position = p.clone();
+							let angle = (j / circlesDetail) * Math.PI * 2;
+							let sin = Math.sin(angle);
+							let cos = -Math.cos(angle);
+
+							let normalPoint = new THREE.Vector3(0, 0, 0);
+							normalPoint.x = (cos * normal.x + sin * binormal.x);
+							normalPoint.y = (cos * normal.y + sin * binormal.y);
+							normalPoint.z = (cos * normal.z + sin * binormal.z);
+
+							normalPoint.multiplyScalar(radius);
+							_position.add(normalPoint);
+
+							var object = new THREE.Object3D();
+							object.position.set(_position.x, _position.y, _position.z);
+							vector.x = p.x;
+							vector.y = p.y;
+							vector.z = p.z;
+							object.lookAt(vector);
+
+							tunnel.push(object);
+						}
+					}
+
+					group_arr.add(...objects);
+					group_arr.position.y -= 3500;
+					group_arr.position.x -= 800;
+
+					scene.add(group_arr);
+
+					let percentage = Math.random();
+
+					function _point() {
+						var p1 = path.getPointAt(percentage % 1);
+						var p2 = path.getPointAt((percentage + 0.01) % 1);
+
+						return {
+							p1: [p1.x - 800, p1.y - 3500, p1.z],
+							p2: [p2.x - 800, p2.y - 3500, p2.z]
+						}
+					}
+
+					background.stars();
+
+					transform(objects, tunnel, 1000, 'tunnel');
+
+					let p2 = _point().p2;
+
+					scene_events.render = function () {
+						percentage += 0.001;
+
+						let point = _point();
+						camera.position.set(...point.p1);
+						camera.lookAt(...point.p2);
+					};
+
+					scene_events.reset = function () {
+						scene.remove(group_arr);
+						camera.position.set(0, 0, 14000);
+						camera.lookAt(0, 0, 0);
+						objects.sort(randomsort);
+					}
 				}
 			}
 
@@ -468,17 +518,15 @@
 				document.getElementById('sphere').addEventListener('click', scene_events.sphere, false);
 				document.getElementById('helix').addEventListener('click', scene_events.helix, false);
 				document.getElementById('grid').addEventListener('click', scene_events.grid, false);
-				document.getElementById('stop').addEventListener('click', function () {
-					scene_events.slot();
-				}, false);
-
+				document.getElementById('slot').addEventListener('click', scene_events.slot, false);
+				document.getElementById('tunnel').addEventListener('click', scene_events.tunnel, false);
 			}
 
 			function transform(origins, targets, duration, para) {
 
 				//TWEEN.removeAll();
 
-				for (var i = 0; i < origins.length; i++) {
+				for (let i = 0; i < origins.length; i++) {
 					let origin = origins[i];
 					let target = targets[i];
 
